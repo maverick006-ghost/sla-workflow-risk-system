@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000/services/explain";
+const API_URL = "https://govpulse-backend.onrender.com/services/explain";
 
 let DATA = [];
 let filter = "all";
