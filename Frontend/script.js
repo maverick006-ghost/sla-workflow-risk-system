@@ -9,24 +9,11 @@ let search = "";
 async function loadData() {
     try {
         const res = await fetch(`${API}/services/explain`);
-        const data = await res.json();
-
-        // ✅ NORMALIZE BACKEND → FRONTEND CONTRACT
-        DATA = data.map(d => ({
-            department: d.department || "Unknown",
-            service: d.service_name,
-            risk: d.workflow_risk === "High Delay Risk" ? "High" : "Normal",
-            rawRisk: d.workflow_risk,
-            steps: d.workflow_steps || 0,
-            delayed: d.delayed_roles || [],
-            ai: d.ai_explanation
-        }));
-
+        DATA = await res.json();
         updateStats();
         renderTable();
-
     } catch (err) {
-        console.error("Failed to load data:", err);
+        console.error("Failed to load data", err);
     }
 }
 
@@ -37,10 +24,10 @@ function updateStats() {
     document.getElementById("total-apps").innerText = DATA.length;
 
     document.getElementById("high-risk-apps").innerText =
-        DATA.filter(d => d.risk === "High").length;
+        DATA.filter(d => d.workflow_risk === "High Delay Risk").length;
 
     document.getElementById("normal-apps").innerText =
-        DATA.filter(d => d.risk === "Normal").length;
+        DATA.filter(d => d.workflow_risk === "Normal").length;
 }
 
 // ---------- TABLE ----------
@@ -49,8 +36,13 @@ function renderTable() {
     body.innerHTML = "";
 
     const filtered = DATA.filter(d =>
-        (filter === "all" || d.risk.toLowerCase() === filter.toLowerCase()) &&
-        d.service.toLowerCase().includes(search)
+        (filter === "all" ||
+            (filter === "High" && d.workflow_risk === "High Delay Risk") ||
+            (filter === "Normal" && d.workflow_risk === "Normal")) &&
+        (
+            d.service_name.toLowerCase().includes(search) ||
+            d.department.toLowerCase().includes(search)
+        )
     );
 
     if (filtered.length === 0) {
@@ -62,15 +54,18 @@ function renderTable() {
     filtered.forEach(d => {
         const row = document.createElement("tr");
 
+        const riskLabel =
+            d.workflow_risk === "High Delay Risk" ? "High" : "Normal";
+
         row.innerHTML = `
             <td>${d.department}</td>
-            <td>${d.service}</td>
+            <td>${d.service_name}</td>
             <td>
-                <span class="badge ${d.risk === "High" ? "high" : "normal"}">
-                    ${d.risk}
+                <span class="badge ${riskLabel.toLowerCase()}">
+                    ${riskLabel}
                 </span>
             </td>
-            <td>${d.delayed.length ? d.delayed.join(", ") : "-"}</td>
+            <td>${d.delayed_roles.length ? d.delayed_roles.join(", ") : "-"}</td>
             <td style="color:#2563eb; cursor:pointer">View Details →</td>
         `;
 
@@ -82,16 +77,16 @@ function renderTable() {
 // ---------- MODAL ----------
 function openModal(d) {
     document.getElementById("modal-title").innerText =
-        `${d.department} – ${d.service}`;
+        `${d.department} – ${d.service_name}`;
 
     document.getElementById("ai-summary").innerText =
-        d.ai?.summary || "No AI insight available.";
+        d.ai_explanation.summary;
 
     document.getElementById("ai-details").innerText =
-        `The workflow has ${d.steps} approval steps.`;
+        d.ai_explanation.details;
 
     document.getElementById("ai-whatif").innerText =
-        d.ai?.what_if || "No optimization suggestion available.";
+        d.ai_explanation.what_if;
 
     document.getElementById("modal").classList.remove("hidden");
 }
