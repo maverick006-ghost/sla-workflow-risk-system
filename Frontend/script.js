@@ -6,27 +6,29 @@ let filter = "all";
 let search = "";
 
 // ---------- LOAD DATA ----------
-
 async function loadData() {
     try {
         const res = await fetch(`${API}/services/explain`);
-        const data = await res.json();
-        renderDashboard(data);
+        DATA = await res.json();
+
+        updateStats();
+        renderTable();
     } catch (err) {
         console.error("Failed to load data", err);
     }
 }
 
-loadData();
-
+document.addEventListener("DOMContentLoaded", loadData);
 
 // ---------- STATS ----------
 function updateStats() {
     document.getElementById("total-apps").innerText = DATA.length;
+
     document.getElementById("high-risk-apps").innerText =
-        DATA.filter(d => d.risk === "High").length;
+        DATA.filter(d => d.workflow_risk === "High Delay Risk").length;
+
     document.getElementById("normal-apps").innerText =
-        DATA.filter(d => d.risk === "Normal").length;
+        DATA.filter(d => d.workflow_risk === "Normal").length;
 }
 
 // ---------- TABLE ----------
@@ -35,8 +37,8 @@ function renderTable() {
     body.innerHTML = "";
 
     const filtered = DATA.filter(d =>
-        (filter === "all" || d.risk === filter) &&
-        (d.district + d.mandal).toLowerCase().includes(search)
+        (filter === "all" || d.workflow_risk === filter) &&
+        (d.department + d.service_name).toLowerCase().includes(search)
     );
 
     if (filtered.length === 0) {
@@ -48,13 +50,20 @@ function renderTable() {
     filtered.forEach(d => {
         const row = document.createElement("tr");
 
+        const badgeClass =
+            d.workflow_risk === "High Delay Risk" ? "high" : "normal";
+
         row.innerHTML = `
-            <td>${d.district}</td>
-            <td>${d.mandal}</td>
-            <td><span class="badge ${d.risk.toLowerCase()}">${d.risk}</span></td>
-            <td>${d.delayed.join(", ") || "-"}</td>
-            <td style="color:#2563eb; cursor:pointer">View Details →</td>
-        `;
+      <td>${d.department}</td>
+      <td>${d.service_name}</td>
+      <td>
+        <span class="badge ${badgeClass}">
+          ${d.workflow_risk}
+        </span>
+      </td>
+      <td>${d.delayed_roles.length ? d.delayed_roles.join(", ") : "-"}</td>
+      <td style="color:#2563eb; cursor:pointer">View Details →</td>
+    `;
 
         row.onclick = () => openModal(d);
         body.appendChild(row);
@@ -64,10 +73,17 @@ function renderTable() {
 // ---------- MODAL ----------
 function openModal(d) {
     document.getElementById("modal-title").innerText =
-        `${d.district} - ${d.mandal}`;
-    document.getElementById("ai-summary").innerText = d.ai.summary;
-    document.getElementById("ai-details").innerText = d.ai.details;
-    document.getElementById("ai-whatif").innerText = d.ai.what_if;
+        `${d.department} – ${d.service_name}`;
+
+    document.getElementById("ai-summary").innerText =
+        d.ai_explanation.summary;
+
+    document.getElementById("ai-details").innerText =
+        "Details: " + d.ai_explanation.details;
+
+    document.getElementById("ai-whatif").innerText =
+        "What-if: " + d.ai_explanation.what_if;
+
     document.getElementById("modal").classList.remove("hidden");
 }
 
@@ -82,9 +98,11 @@ document.getElementById("search-input").addEventListener("input", e => {
 });
 
 document.getElementById("risk-filter").addEventListener("change", e => {
-    filter = e.target.value;
+    filter = e.target.value === "all"
+        ? "all"
+        : e.target.value === "high"
+            ? "High Delay Risk"
+            : "Normal";
+
     renderTable();
 });
-
-// ---------- INIT ----------
-document.addEventListener("DOMContentLoaded", loadData);
