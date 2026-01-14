@@ -1,36 +1,24 @@
 // 🔥 BACKEND API (LIVE)
-const API = "https://govpulse-backend-sbgz.onrender.com/services/explain";
+const API = "https://govpulse-backend-sbgz.onrender.com";
 
 let DATA = [];
 let filter = "all";
 let search = "";
 
 // ---------- LOAD DATA ----------
+
 async function loadData() {
     try {
-        const res = await fetch(API);
-        if (!res.ok) throw new Error("API error");
-
-        const json = await res.json();
-
-        DATA = json.map((d, i) => ({
-            id: i + 1,
-            district: d.department,
-            mandal: d.service_name,
-            risk: d.workflow_risk === "High Delay Risk" ? "High" : "Normal",
-            delayed: d.delayed_roles || [],
-            ai: d.ai_explanation
-        }));
-
-        updateStats();
-        renderTable();
-
+        const res = await fetch(`${API}/services/explain`);
+        const data = await res.json();
+        renderDashboard(data);
     } catch (err) {
-        console.error("Fetch failed:", err);
-        document.getElementById("table-body").innerHTML =
-            `<tr><td colspan="5">Failed to load data</td></tr>`;
+        console.error("Failed to load data", err);
     }
 }
+
+loadData();
+
 
 // ---------- STATS ----------
 function updateStats() {
