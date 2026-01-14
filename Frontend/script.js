@@ -1,5 +1,5 @@
-const API_URL = "https://govpulse-backend-sbgz.onrender.com/services/explain";
-console.log("GovPulse API:", API_URL);
+// 🔥 BACKEND API (LIVE)
+const API = "https://govpulse-backend-sbgz.onrender.com/services/explain";
 
 let DATA = [];
 let filter = "all";
@@ -63,11 +63,9 @@ function renderTable() {
         row.innerHTML = `
             <td>${d.district}</td>
             <td>${d.mandal}</td>
-            <td>
-                <span class="badge ${d.risk.toLowerCase()}">${d.risk}</span>
-            </td>
+            <td><span class="badge ${d.risk.toLowerCase()}">${d.risk}</span></td>
             <td>${d.delayed.join(", ") || "-"}</td>
-            <td style="color:#2563eb; cursor:pointer">View Risk Analysis →</td>
+            <td style="color:#2563eb; cursor:pointer">View Details →</td>
         `;
 
         row.onclick = () => openModal(d);
@@ -75,18 +73,13 @@ function renderTable() {
     });
 }
 
-
 // ---------- MODAL ----------
 function openModal(d) {
-    if (!d?.ai) return;
-
     document.getElementById("modal-title").innerText =
         `${d.district} - ${d.mandal}`;
-
     document.getElementById("ai-summary").innerText = d.ai.summary;
     document.getElementById("ai-details").innerText = d.ai.details;
     document.getElementById("ai-whatif").innerText = d.ai.what_if;
-
     document.getElementById("modal").classList.remove("hidden");
 }
 
@@ -105,5 +98,5 @@ document.getElementById("risk-filter").addEventListener("change", e => {
     renderTable();
 });
 
-// ---------- INIT (SAFE) ----------
+// ---------- INIT ----------
 document.addEventListener("DOMContentLoaded", loadData);
