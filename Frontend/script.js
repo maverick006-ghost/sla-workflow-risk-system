@@ -11,11 +11,11 @@ async function loadData() {
         const res = await fetch(`${API}/services/explain`);
         const data = await res.json();
 
-        // 🔥 Normalize backend → frontend model
+        // Normalize backend data → frontend format
         DATA = data.map(d => ({
-            department: d.department,
+            department: d.department || "Unknown",
             service: d.service_name,
-            risk: d.workflow_risk.includes("High") ? "High" : "Normal",
+            risk: d.workflow_risk, // Normal / High Delay Risk
             delayed: d.delayed_roles || [],
             ai: d.ai_explanation
         }));
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", loadData);
 function updateStats() {
     document.getElementById("total-apps").innerText = DATA.length;
     document.getElementById("high-risk-apps").innerText =
-        DATA.filter(d => d.risk === "High").length;
+        DATA.filter(d => d.risk === "High Delay Risk").length;
     document.getElementById("normal-apps").innerText =
         DATA.filter(d => d.risk === "Normal").length;
 }
@@ -45,7 +45,7 @@ function renderTable() {
 
     const filtered = DATA.filter(d =>
         (filter === "all" || d.risk === filter) &&
-        (d.department + d.service).toLowerCase().includes(search)
+        (d.service.toLowerCase().includes(search))
     );
 
     if (filtered.length === 0) {
@@ -61,7 +61,7 @@ function renderTable() {
             <td>${d.department}</td>
             <td>${d.service}</td>
             <td>
-              <span class="badge ${d.risk.toLowerCase()}">
+              <span class="badge ${d.risk === "Normal" ? "normal" : "high"}">
                 ${d.risk}
               </span>
             </td>
@@ -79,14 +79,9 @@ function openModal(d) {
     document.getElementById("modal-title").innerText =
         `${d.department} – ${d.service}`;
 
-    document.getElementById("ai-summary").innerText =
-        d.ai.summary;
-
-    document.getElementById("ai-details").innerText =
-        d.ai.details;
-
-    document.getElementById("ai-whatif").innerText =
-        d.ai.what_if;
+    document.getElementById("ai-summary").innerText = d.ai.summary;
+    document.getElementById("ai-details").innerText = d.ai.details;
+    document.getElementById("ai-whatif").innerText = d.ai.what_if;
 
     document.getElementById("modal").classList.remove("hidden");
 }
