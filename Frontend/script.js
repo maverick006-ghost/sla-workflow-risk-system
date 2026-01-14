@@ -11,19 +11,22 @@ async function loadData() {
         const res = await fetch(`${API}/services/explain`);
         const data = await res.json();
 
-        // Normalize backend data → frontend format
+        // ✅ NORMALIZE BACKEND → FRONTEND CONTRACT
         DATA = data.map(d => ({
             department: d.department || "Unknown",
             service: d.service_name,
-            risk: d.workflow_risk, // Normal / High Delay Risk
+            risk: d.workflow_risk === "High Delay Risk" ? "High" : "Normal",
+            rawRisk: d.workflow_risk,
+            steps: d.workflow_steps || 0,
             delayed: d.delayed_roles || [],
             ai: d.ai_explanation
         }));
 
         updateStats();
         renderTable();
+
     } catch (err) {
-        console.error("Failed to load data", err);
+        console.error("Failed to load data:", err);
     }
 }
 
@@ -32,8 +35,10 @@ document.addEventListener("DOMContentLoaded", loadData);
 // ---------- STATS ----------
 function updateStats() {
     document.getElementById("total-apps").innerText = DATA.length;
+
     document.getElementById("high-risk-apps").innerText =
-        DATA.filter(d => d.risk === "High Delay Risk").length;
+        DATA.filter(d => d.risk === "High").length;
+
     document.getElementById("normal-apps").innerText =
         DATA.filter(d => d.risk === "Normal").length;
 }
@@ -44,8 +49,8 @@ function renderTable() {
     body.innerHTML = "";
 
     const filtered = DATA.filter(d =>
-        (filter === "all" || d.risk === filter) &&
-        (d.service.toLowerCase().includes(search))
+        (filter === "all" || d.risk.toLowerCase() === filter.toLowerCase()) &&
+        d.service.toLowerCase().includes(search)
     );
 
     if (filtered.length === 0) {
@@ -61,9 +66,9 @@ function renderTable() {
             <td>${d.department}</td>
             <td>${d.service}</td>
             <td>
-              <span class="badge ${d.risk === "Normal" ? "normal" : "high"}">
-                ${d.risk}
-              </span>
+                <span class="badge ${d.risk === "High" ? "high" : "normal"}">
+                    ${d.risk}
+                </span>
             </td>
             <td>${d.delayed.length ? d.delayed.join(", ") : "-"}</td>
             <td style="color:#2563eb; cursor:pointer">View Details →</td>
@@ -79,9 +84,14 @@ function openModal(d) {
     document.getElementById("modal-title").innerText =
         `${d.department} – ${d.service}`;
 
-    document.getElementById("ai-summary").innerText = d.ai.summary;
-    document.getElementById("ai-details").innerText = d.ai.details;
-    document.getElementById("ai-whatif").innerText = d.ai.what_if;
+    document.getElementById("ai-summary").innerText =
+        d.ai?.summary || "No AI insight available.";
+
+    document.getElementById("ai-details").innerText =
+        `The workflow has ${d.steps} approval steps.`;
+
+    document.getElementById("ai-whatif").innerText =
+        d.ai?.what_if || "No optimization suggestion available.";
 
     document.getElementById("modal").classList.remove("hidden");
 }
