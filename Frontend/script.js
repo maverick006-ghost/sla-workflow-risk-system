@@ -1,4 +1,5 @@
-const API_URL = "https://govpulse-backend.onrender.com/services/explain";
+const API_URL = "https://govpulse-backend-sbgz.onrender.com/services/explain";
+console.log("GovPulse API:", API_URL);
 
 let DATA = [];
 let filter = "all";
