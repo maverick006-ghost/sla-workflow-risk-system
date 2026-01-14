@@ -26,7 +26,22 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 # LOAD WORKFLOW MASTER
 # --------------------------------------------------
 def load_workflow_data():
-    path = os.path.join(DATA_DIR, "workflow.xlsx")
+    # Try multiple possible paths (Render + local safe)
+    possible_paths = [
+        os.path.join(os.getcwd(), "data", "workflow.xlsx"),
+        os.path.join(os.path.dirname(__file__), "data", "workflow.xlsx"),
+    ]
+
+    path = None
+    for p in possible_paths:
+        if os.path.exists(p):
+            path = p
+            break
+
+    if path is None:
+        print("⚠️ workflow.xlsx not found, starting with empty workflows")
+        return {}
+
     df = pd.read_excel(path)
 
     # Normalize column names
@@ -53,6 +68,7 @@ def load_workflow_data():
         }
 
     return workflows
+
 
 
 WORKFLOWS = load_workflow_data()
