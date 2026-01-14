@@ -23,11 +23,17 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # --------------------------------------------------
-# LOAD WORKFLOW MASTER
+# HELPERS
+# --------------------------------------------------
+def normalize(text):
+    return " ".join(str(text).lower().split())
+
+# --------------------------------------------------
+# LOAD WORKFLOW MASTER (SAFE: LOCAL + RENDER)
 # --------------------------------------------------
 def load_workflow_data():
-    # Try multiple possible paths (Render + local safe)
     possible_paths = [
+        os.path.join(os.getcwd(), "Backend", "data", "workflow.xlsx"),
         os.path.join(os.getcwd(), "data", "workflow.xlsx"),
         os.path.join(os.path.dirname(__file__), "data", "workflow.xlsx"),
     ]
@@ -39,12 +45,10 @@ def load_workflow_data():
             break
 
     if path is None:
-        print("⚠️ workflow.xlsx not found, starting with empty workflows")
+        print("⚠️ workflow.xlsx not found. Starting with empty workflows.")
         return {}
 
     df = pd.read_excel(path)
-
-    # Normalize column names
     df.columns = df.columns.str.strip().str.lower()
 
     workflows = {}
@@ -54,27 +58,23 @@ def load_workflow_data():
         service = row.get("service name")
         sla = row.get("sla")
         rural = row.get("workflow (rural)")
-        urban = row.get("workflow (urban)")
 
         if pd.isna(dept) or pd.isna(service):
             continue
 
-        workflows[service.strip().lower()] = {
+        workflows[normalize(service)] = {
             "department": dept,
             "sla_days": int(str(sla).split()[0]) if not pd.isna(sla) else None,
-            "workflow_rural": rural,
-            "workflow_urban": urban,
-            "steps": len(str(rural).split("->")) if not pd.isna(rural) else 0
+            "steps": len(str(rural).split("->")) if not pd.isna(rural) else 0,
         }
 
     return workflows
 
 
-
 WORKFLOWS = load_workflow_data()
 
 # --------------------------------------------------
-# SERVICES IN SCOPE (FINAL – OPTION A)
+# SERVICES IN SCOPE (OPTION A – FINAL)
 # --------------------------------------------------
 SERVICE_FILES = [
     ("Income Certificate", "Income certificate.xlsx"),
@@ -109,8 +109,8 @@ def root():
 def services_explain():
     results = []
 
-    for service_name, file_name in SERVICE_FILES:
-        key = service_name.lower()
+    for service_name, _ in SERVICE_FILES:
+        key = normalize(service_name)
         wf = WORKFLOWS.get(key, {})
 
         steps = wf.get("steps", 0)
