@@ -8,26 +8,42 @@ let search = "";
 // ---------- LOAD DATA ----------
 async function loadData() {
     try {
+        console.log("Fetching data...");
         const res = await fetch(`${API}/services/explain`);
-        DATA = await res.json();
+
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+        const json = await res.json();
+        console.log("Data received:", json);
+
+        // 🔥 CRITICAL FIX: Map Backend Keys to Frontend UI Keys
+        DATA = json.map((item, index) => ({
+            id: index,
+            district: item.department,      // Map 'department' to 'district' column
+            mandal: item.service_name,      // Map 'service_name' to 'mandal' column
+            // Logic to determine High/Normal risk based on backend string
+            risk: (item.workflow_risk === "High Delay Risk") ? "High" : "Normal",
+            delayed: item.delayed_roles || [],
+            ai: item.ai_explanation
+        }));
+
         updateStats();
         renderTable();
+
     } catch (err) {
-        console.error("Failed to load data", err);
+        console.error("Failed to load data:", err);
+        document.getElementById("table-body").innerHTML =
+            `<tr><td colspan="5" style="text-align:center; color: red;">Error loading data. Check Console.</td></tr>`;
     }
 }
-
-document.addEventListener("DOMContentLoaded", loadData);
 
 // ---------- STATS ----------
 function updateStats() {
     document.getElementById("total-apps").innerText = DATA.length;
-
     document.getElementById("high-risk-apps").innerText =
-        DATA.filter(d => d.workflow_risk === "High Delay Risk").length;
-
+        DATA.filter(d => d.risk === "High").length;
     document.getElementById("normal-apps").innerText =
-        DATA.filter(d => d.workflow_risk === "Normal").length;
+        DATA.filter(d => d.risk === "Normal").length;
 }
 
 // ---------- TABLE ----------
@@ -36,13 +52,8 @@ function renderTable() {
     body.innerHTML = "";
 
     const filtered = DATA.filter(d =>
-        (filter === "all" ||
-            (filter === "High" && d.workflow_risk === "High Delay Risk") ||
-            (filter === "Normal" && d.workflow_risk === "Normal")) &&
-        (
-            d.service_name.toLowerCase().includes(search) ||
-            d.department.toLowerCase().includes(search)
-        )
+        (filter === "all" || d.risk === filter) &&
+        (d.district + d.mandal).toLowerCase().includes(search)
     );
 
     if (filtered.length === 0) {
@@ -54,21 +65,18 @@ function renderTable() {
     filtered.forEach(d => {
         const row = document.createElement("tr");
 
-        const riskLabel =
-            d.workflow_risk === "High Delay Risk" ? "High" : "Normal";
+        // UI Logic for Badge Color
+        const badgeClass = d.risk === "High" ? "high" : "normal";
 
         row.innerHTML = `
-            <td>${d.department}</td>
-            <td>${d.service_name}</td>
-            <td>
-                <span class="badge ${riskLabel.toLowerCase()}">
-                    ${riskLabel}
-                </span>
-            </td>
-            <td>${d.delayed_roles.length ? d.delayed_roles.join(", ") : "-"}</td>
+            <td>${d.district}</td>
+            <td>${d.mandal}</td>
+            <td><span class="badge ${badgeClass}">${d.risk}</span></td>
+            <td>${d.delayed.join(", ") || "-"}</td>
             <td style="color:#2563eb; cursor:pointer">View Details →</td>
         `;
 
+        // Pass the specific data object to the modal
         row.onclick = () => openModal(d);
         body.appendChild(row);
     });
@@ -76,18 +84,13 @@ function renderTable() {
 
 // ---------- MODAL ----------
 function openModal(d) {
+    if (!d || !d.ai) return;
+
     document.getElementById("modal-title").innerText =
-        `${d.department} – ${d.service_name}`;
-
-    document.getElementById("ai-summary").innerText =
-        d.ai_explanation.summary;
-
-    document.getElementById("ai-details").innerText =
-        d.ai_explanation.details;
-
-    document.getElementById("ai-whatif").innerText =
-        d.ai_explanation.what_if;
-
+        `${d.district} - ${d.mandal}`;
+    document.getElementById("ai-summary").innerText = d.ai.summary;
+    document.getElementById("ai-details").innerText = d.ai.details;
+    document.getElementById("ai-whatif").innerText = d.ai.what_if;
     document.getElementById("modal").classList.remove("hidden");
 }
 
@@ -105,3 +108,14 @@ document.getElementById("risk-filter").addEventListener("change", e => {
     filter = e.target.value;
     renderTable();
 });
+
+// Close modal when clicking outside
+window.onclick = function (event) {
+    const modal = document.getElementById("modal");
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+// ---------- INIT ----------
+document.addEventListener("DOMContentLoaded", loadData);
