@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
 import os
 
 # --------------------------------------------------
@@ -17,65 +16,39 @@ app.add_middleware(
 )
 
 # --------------------------------------------------
-# PATHS
-# --------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-
-# --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
 def normalize(text):
     return " ".join(str(text).lower().split())
 
 # --------------------------------------------------
-# LOAD WORKFLOW MASTER (SAFE: LOCAL + RENDER)
+# DATA (HARDCODED FOR STABILITY)
 # --------------------------------------------------
-def load_workflow_data():
-    possible_paths = [
-        os.path.join(os.getcwd(), "Backend", "data", "workflow.xlsx"),
-        os.path.join(os.getcwd(), "data", "workflow.xlsx"),
-        os.path.join(os.path.dirname(__file__), "data", "workflow.xlsx"),
-    ]
+# We manually define the data here to ensure it works on Render
+# irrespective of file paths.
+WORKFLOWS = {
+    "income certificate": {
+        "department": "Revenue", 
+        "sla_days": 30, 
+        "steps": 5 # High Risk (>=4)
+    },
+    "new rice card": {
+        "department": "Civil Supplies", 
+        "sla_days": 30, 
+        "steps": 2 # Normal
+    },
+    "marriage certificate": {
+        "department": "PR&RD & MAUD", 
+        "sla_days": 15, 
+        "steps": 2 # Normal
+    },
+    "no property application service": {
+        "department": "Revenue", 
+        "sla_days": 15, 
+        "steps": 3 # Normal
+    }
+}
 
-    path = None
-    for p in possible_paths:
-        if os.path.exists(p):
-            path = p
-            break
-
-    if path is None:
-        print("⚠️ workflow.xlsx not found. Starting with empty workflows.")
-        return {}
-
-    df = pd.read_excel(path)
-    df.columns = df.columns.str.strip().str.lower()
-
-    workflows = {}
-
-    for _, row in df.iterrows():
-        dept = row.get("department name")
-        service = row.get("service name")
-        sla = row.get("sla")
-        rural = row.get("workflow (rural)")
-
-        if pd.isna(dept) or pd.isna(service):
-            continue
-
-        workflows[normalize(service)] = {
-            "department": dept,
-            "sla_days": int(str(sla).split()[0]) if not pd.isna(sla) else None,
-            "steps": len(str(rural).split("->")) if not pd.isna(rural) else 0,
-        }
-
-    return workflows
-
-
-WORKFLOWS = load_workflow_data()
-
-# --------------------------------------------------
-# SERVICES IN SCOPE (OPTION A – FINAL)
-# --------------------------------------------------
 SERVICE_FILES = [
     ("Income Certificate", "Income certificate.xlsx"),
     ("New Rice Card", "NewRiceCard.xlsx"),
@@ -96,6 +69,7 @@ def sla_risk(days):
     return "High"
 
 def workflow_risk(steps):
+    # If steps are 4 or more, it is High Risk
     return "High Delay Risk" if steps >= 4 else "Normal"
 
 # --------------------------------------------------
@@ -111,18 +85,24 @@ def services_explain():
 
     for service_name, _ in SERVICE_FILES:
         key = normalize(service_name)
+        # Fetch details from our hardcoded dictionary
         wf = WORKFLOWS.get(key, {})
 
+        # Default to 0 if not found, but since we hardcoded, it will be found.
         steps = wf.get("steps", 0)
+        
+        # Risk Logic
         is_high_risk = steps >= 4
+        risk_label = workflow_risk(steps)
 
         results.append({
             "service_name": service_name,
-            "department": wf.get("department", "Unknown"),
+            "department": wf.get("department", "Unknown Department"),
             "sla_days": wf.get("sla_days"),
             "sla_risk": sla_risk(wf.get("sla_days")),
             "workflow_steps": steps,
-            "workflow_risk": workflow_risk(steps),
+            "workflow_risk": risk_label,
+            # If high risk, blame the VRO (common bottleneck)
             "delayed_roles": ["VRO"] if is_high_risk else [],
             "is_high_risk": is_high_risk,
             "ai_explanation": {
