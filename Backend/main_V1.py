@@ -24,8 +24,6 @@ def normalize(text):
 # --------------------------------------------------
 # DATA (HARDCODED FOR STABILITY)
 # --------------------------------------------------
-# We manually define the data here to ensure it works on Render
-# irrespective of file paths.
 WORKFLOWS = {
     "income certificate": {
         "department": "Revenue", 
@@ -69,7 +67,6 @@ def sla_risk(days):
     return "High"
 
 def workflow_risk(steps):
-    # If steps are 4 or more, it is High Risk
     return "High Delay Risk" if steps >= 4 else "Normal"
 
 # --------------------------------------------------
@@ -85,7 +82,6 @@ def services_explain():
 
     for service_name, _ in SERVICE_FILES:
         key = normalize(service_name)
-        # Fetch details from our hardcoded dictionary
         wf = WORKFLOWS.get(key, {})
 
         # Default to 0 if not found, but since we hardcoded, it will be found.
