@@ -9,16 +9,12 @@
     --bg-page: #f8fafc;
     --bg-surface: #ffffff;
     --border-light: #e2e8f0;
-
     --success: #10b981;
     --success-bg: #ecfdf5;
     --danger: #ef4444;
     --danger-bg: #fef2f2;
-
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 12px 20px rgba(0, 0, 0, 0.15);
-
     --radius-md: 12px;
     --radius-lg: 16px;
 }
@@ -35,6 +31,88 @@ body {
 }
 
 /* =========================
+   INTRO SPLASH SCREEN
+========================= */
+#intro-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+}
+
+#intro-screen.slide-up {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.intro-content {
+    text-align: center;
+    background: white;
+    padding: 48px 64px;
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+}
+
+.logo-large {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #2563eb;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+}
+
+.tagline {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin-bottom: 32px;
+    font-weight: 500;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px auto;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-enter {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 14px 32px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s;
+}
+
+.btn-enter:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* =========================
    Layout
 ========================= */
 .app {
@@ -42,9 +120,6 @@ body {
     min-height: 100vh;
 }
 
-/* =========================
-   Sidebar
-========================= */
 .sidebar {
     width: 260px;
     background: var(--bg-surface);
@@ -84,9 +159,6 @@ body {
     color: var(--primary);
 }
 
-/* =========================
-   Main
-========================= */
 .main {
     flex: 1;
     padding: 32px 40px;
@@ -107,13 +179,31 @@ body {
 }
 
 /* =========================
-   Stats
+   Stats & Chart
 ========================= */
-.stats {
+.stats-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.cards-wrapper {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px;
-    margin-bottom: 32px;
+}
+
+.chart-wrapper {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
 }
 
 .stat {
@@ -145,7 +235,7 @@ body {
 }
 
 /* =========================
-   Controls
+   Controls & Table
 ========================= */
 .controls {
     display: flex;
@@ -161,9 +251,6 @@ body {
     font-size: 0.95rem;
 }
 
-/* =========================
-   Table
-========================= */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -193,7 +280,7 @@ tbody tr:hover {
 }
 
 /* =========================
-   Badges
+   Components
 ========================= */
 .badge {
     display: inline-block;
@@ -213,9 +300,68 @@ tbody tr:hover {
     color: var(--success);
 }
 
-/* =========================
-   Modal (FIXED)
-========================= */
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Buttons */
+.btn-lang {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.btn-lang:hover {
+    background: #dbeafe;
+}
+
+.btn-export {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #475569;
+    transition: all 0.2s;
+}
+
+.btn-export:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+/* Modal */
 .modal {
     position: fixed;
     inset: 0;
@@ -240,14 +386,6 @@ tbody tr:hover {
     box-shadow: var(--shadow-lg);
 }
 
-.modal-box h3 {
-    margin-top: 0;
-}
-
-.modal-box p {
-    color: var(--text-muted);
-}
-
 .modal-box button {
     margin-top: 16px;
     width: 100%;
@@ -259,9 +397,7 @@ tbody tr:hover {
     cursor: pointer;
 }
 
-/* =========================
-   Mobile Responsive
-========================= */
+/* Mobile */
 @media (max-width: 768px) {
     .app {
         flex-direction: column;
@@ -281,11 +417,8 @@ tbody tr:hover {
         gap: 8px;
     }
 
-    .main {
-        padding: 20px;
-    }
-
-    .stats {
+    .stats-container,
+    .cards-wrapper {
         grid-template-columns: 1fr;
     }
 
@@ -297,12 +430,5 @@ tbody tr:hover {
         display: block;
         overflow-x: auto;
         white-space: nowrap;
-    }
-}
-
-@media (max-width: 480px) {
-    .modal-box {
-        padding: 20px;
-        width: calc(100% - 32px);
     }
 }

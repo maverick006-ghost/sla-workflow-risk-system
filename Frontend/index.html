@@ -6,75 +6,106 @@
     <title>GovPulse – SLA Workflow Risk</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
 
+    <div id="intro-screen">
+        <div class="intro-content">
+            <div class="logo-large">GovPulse</div>
+            <p class="tagline">SLA Risk Intelligence Engine</p>
+
+            <div id="loading-state">
+                <div class="spinner"></div>
+                <p>Establishing Secure Connection...</p>
+            </div>
+
+            <div id="ready-state" class="hidden">
+                <p style="color:#10b981; font-weight:600; margin-bottom:16px;">✓ System Ready. v1.0 Live</p>
+                <button class="btn-enter" onclick="enterDashboard()">Access Dashboard &rarr;</button>
+            </div>
+        </div>
+    </div>
+
     <div class="app">
 
-        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="logo">GovPulse <span>BETA</span></div>
             <nav>
-                <a class="active">Dashboard</a>
-                <a>Reports</a>
-                <a>Settings</a>
+                <a class="active" data-key="dashboard">Dashboard</a>
+                <a data-key="reports">Reports</a>
+                <a data-key="settings">Settings</a>
             </nav>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <main class="main">
 
-            <!-- TOP BAR -->
             <header class="topbar">
-                <h1>Government Service SLA Risk Dashboard</h1>
-                <div class="user">Admin</div>
+                <div>
+                    <h1 data-key="title">Government Service SLA Risk Dashboard</h1>
+                    <div
+                        style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#64748b; margin-top:4px;">
+                        <span class="live-dot"></span> <span data-key="live">System Live • Last updated:</span> <span
+                            id="last-updated">Just now</span>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; align-items: center;">
+                    <button onclick="toggleLanguage()" class="btn-lang" id="lang-btn">తెలుగు</button>
+
+                    <button onclick="exportCSV()" class="btn-export" data-key="export">⬇ Export Report</button>
+                    <div class="user">Admin</div>
+                </div>
             </header>
 
-            <!-- STATS -->
-            <section class="stats">
-                <div class="stat">
-                    <p>Total Services Monitored</p>
-                    <h2 id="total-apps">0</h2>
+            <section class="stats-container">
+                <div class="cards-wrapper">
+                    <div class="stat">
+                        <p data-key="total_services">Total Services Monitored</p>
+                        <h2 id="total-apps">0</h2>
+                    </div>
+
+                    <div class="stat danger">
+                        <p data-key="high_risk">High Risk Services</p>
+                        <h2 id="high-risk-apps">0</h2>
+                    </div>
+
+                    <div class="stat success">
+                        <p data-key="normal_sla">Normal SLA Services</p>
+                        <h2 id="normal-apps">0</h2>
+                    </div>
                 </div>
 
-                <div class="stat danger">
-                    <p>High Risk Services</p>
-                    <h2 id="high-risk-apps">0</h2>
-                </div>
-
-                <div class="stat success">
-                    <p>Normal SLA Services</p>
-                    <h2 id="normal-apps">0</h2>
+                <div class="chart-wrapper">
+                    <canvas id="riskChart"></canvas>
                 </div>
             </section>
 
-            <!-- CONTROLS -->
             <section class="controls">
                 <input id="search-input" type="text" placeholder="Search districts or mandals..." />
 
                 <select id="risk-filter">
-                    <option value="all">All Risks</option>
+                    <option value="all" data-key="all_risks">All Risks</option>
                     <option value="High">High</option>
                     <option value="Normal">Normal</option>
                 </select>
             </section>
 
-            <!-- TABLE -->
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Department</th>
-                            <th>Service Name</th>
-                            <th>Delay Risk</th>
-                            <th>Delayed Roles</th>
-                            <th>Action</th>
+                            <th data-key="dept">Department</th>
+                            <th data-key="service">Service Name</th>
+                            <th data-key="risk_level">Delay Risk</th>
+                            <th data-key="delayed_role">Delayed Roles</th>
+                            <th data-key="action">Action</th>
                         </tr>
                     </thead>
 
                     <tbody id="table-body">
-                        <!-- JS injects rows here -->
                     </tbody>
                 </table>
             </div>
@@ -82,7 +113,6 @@
         </main>
     </div>
 
-    <!-- MODAL -->
     <div id="modal" class="modal hidden">
         <div class="modal-box">
             <h3 id="modal-title"></h3>
@@ -99,7 +129,7 @@
                 <span id="ai-whatif"></span>
             </p>
 
-            <button type="button" onclick="closeModal()">Close</button>
+            <button type="button" onclick="closeModal()" data-key="close">Close</button>
         </div>
     </div>
 

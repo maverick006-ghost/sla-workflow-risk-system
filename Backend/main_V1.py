@@ -8,6 +8,8 @@ import sys
 # APP SETUP
 # --------------------------------------------------
 app = FastAPI(title="GovPulse – SLA Workflow Risk Engine")
+# the above line helps to deploy the server by creating and naming it
+
 
 app.add_middleware(
     CORSMiddleware,
